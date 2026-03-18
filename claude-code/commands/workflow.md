@@ -1,0 +1,457 @@
+---
+description: Agent team workflow orchestration. Adaptive parallel/sequential coordination of Frontend Engineer, Backend Engineer, General Engineer, UX Reviewer, and Reviewer agents. Integrates superpowers skills at each phase.
+---
+
+# /workflow — Adaptive Agent Orchestration
+
+Use this command when starting a new feature, bug fix, or task that requires implementation work.
+
+## Your Role
+
+You are the **Orchestrator**. You coordinate agents, decide execution patterns, and manage the workflow. You do NOT write implementation code — you delegate to engineer agents.
+
+---
+
+## Step 1: Design & Plan
+
+> **Skills**: `superpowers:brainstorming`, `superpowers:writing-plans`, `frontend-design:frontend-design`
+> **Tools**: `feature-dev:code-explorer`, `feature-dev:code-architect`, `WebSearch`, `Context7`, `EnterPlanMode`
+
+A single document with all sections. Save to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md`.
+
+---
+
+### Part A: Research & Context Gathering
+
+Before designing anything, understand the current state and the landscape.
+
+1. **Explore codebase**: Dispatch `feature-dev:code-explorer` agent to trace existing code paths, map current architecture, and identify files/services that will be affected
+2. **Research industry practices**: Use `WebSearch` to find how similar features are implemented in production systems, industry standards, and common pitfalls
+3. **Pull library docs**: Use `Context7` MCP to fetch latest documentation for relevant libraries
+4. **Enter Plan Mode**: Use `EnterPlanMode` for structured reasoning on complex architectural decisions
+
+Output: a context summary with current state, affected files/services, and relevant research findings.
+
+---
+
+### Part B: Requirements & Impact Analysis
+
+1. **Clarify requirements**: Ask questions one at a time until the feature is fully understood
+2. **Impact analysis**: Map every file, service, flow, and external system that will be affected
+3. **Dependency mapping**: Identify what must exist before this feature can work (data, APIs, auth, infrastructure)
+4. **Risk identification**: What could go wrong? Data loss, breaking changes, performance regression, security exposure
+
+---
+
+### Part C: Design Proposal
+
+1. **Architecture design**: Dispatch `feature-dev:code-architect` agent to design the architecture based on existing codebase patterns
+2. **Visual design** (if UI changes): Invoke `frontend-design:frontend-design` skill to create mockups, component hierarchy, and interaction flows
+3. **Propose 2-3 approaches**: Invoke `superpowers:brainstorming` for each approach with concrete trade-offs covering: performance, cost, complexity, maintainability, risk
+4. **Write design document**: Goal, chosen approach, data flow, API shapes, component structure, error states, edge cases
+
+Proceed directly to Panel Review — user approval happens after the panel scrutinizes the design (Part E).
+
+---
+
+### Part D: Panel Review
+
+> **Skill**: `superpowers:dispatching-parallel-agents`
+
+Two-round panel review. Round 1 runs core + domain panelists. The Blind Spot Reviewer's findings determine which gap panelists are needed in Round 2.
+
+**Adaptive selection**: The orchestrator selects only panelists relevant to this specific design — not all of them. Before dispatch, present the selected panel to the user for confirmation. Over time, the orchestrator learns from past run logs which panelists produce valuable findings for this codebase and makes smarter selections.
+
+**Escalation rule**: No hard cap on revision cycles. Continue until MUST ADDRESS = 0. If the **same finding** persists after **2 fix attempts**, escalate to user with options: (A) accept the risk, (B) redesign this part, (C) try a different approach.
+
+#### Round 1: Core + Domain Panelists (parallel)
+
+**Core panelists** (always run):
+
+| Panelist | Focus |
+|----------|-------|
+| **Architecture Expert** | Scalability, design patterns, over-engineering risk, system boundaries, data consistency |
+| **Security Reviewer** | Auth flows, data exposure, injection vectors, OWASP top 10, secrets handling |
+| **Stress Test Reviewer** | Unhappy paths, edge cases, race conditions, abuse scenarios. For every feature in the design, asks: What if the input is wrong? What if it's malicious? What if the service is down? What if the user does things out of order? What if two users act simultaneously? What are the boundary conditions (empty, max, special characters)? |
+| **Blind Spot Reviewer** | What is this design MISSING that it should address? Researches online for what similar products/features typically include. Returns a list of gaps with recommended gap panelists for Round 2. |
+
+**Domain panelists** (auto-selected based on what the design touches):
+
+| Panelist | Triggers when | Focus |
+|----------|--------------|-------|
+| **Frontend Architect** | Design touches UI components or state | Component structure, state management, rendering performance, bundle impact, code splitting |
+| **Backend Architect** | Design touches APIs or data layer | API design, data modeling, query performance, caching strategy, error handling |
+| **UI/UX/UE Expert** | Design has user-facing changes | User flows, visual hierarchy, interaction patterns, loading/error/empty states, micro-interactions |
+| **Mobile/Responsive Expert** | Design has visual/layout changes | Cross-platform compatibility, responsive breakpoints, touch targets, mobile performance |
+| **Database/Data Expert** | Design changes data models or queries | Schema design, migration strategy, indexing, data integrity, backup/rollback |
+
+**Panelist output format** (Round 1 — all panelists including domain):
+
+```
+## MUST ADDRESS (blocks implementation)
+- [finding] — [why this blocks, what goes wrong if ignored]
+
+## SHOULD ADDRESS (improves quality significantly)
+- [finding] — [concrete improvement and effort estimate]
+
+## CONSIDER (worth thinking about, not blocking)
+- [finding] — [potential benefit]
+
+## APPROVED ASPECTS (what's strong about this design)
+- [what works well and why]
+
+## RECOMMENDED GAP PANELISTS (optional — any panelist can suggest)
+- [panelist name] — [why this expertise is missing from the current review]
+```
+
+**Stress Test Reviewer output format:**
+
+```
+## UNHAPPY PATHS NOT COVERED
+- Feature: [feature name]
+  - [scenario] → [what should happen? not defined in design]
+  - [scenario] → [not mentioned]
+
+## RACE CONDITIONS
+- [description of concurrent scenario]
+
+## BOUNDARY CONDITIONS
+- [empty state / max items / special characters / etc.]
+
+## ABUSE SCENARIOS
+- [rate limiting / bot attacks / credential stuffing / etc.]
+```
+
+**Blind Spot Reviewer output format:**
+
+```
+## GAPS FOUND
+- [gap] — [why it matters] — RECOMMENDED PANELIST: [panelist name from gap roster]
+
+## MUST ADDRESS (findings that don't need a specialist)
+- [finding] — [what to fix]
+
+## NO GAP PANELIST NEEDED
+- [areas that are adequately covered]
+```
+
+#### Between rounds
+
+The orchestrator:
+1. Reads the Blind Spot Reviewer's GAPS FOUND
+2. Maps each gap to the appropriate gap panelist
+3. Presents to user: "Blind Spot Reviewer found N gaps. Recommending these gap panelists for Round 2: [list]. Want to add or remove any?"
+4. User confirms → dispatch Round 2
+5. If no gaps found → skip Round 2
+
+#### Round 2: Gap Panelists (parallel, only if gaps found)
+
+**Gap panelist roster** (dispatched only when recommended by Blind Spot Reviewer):
+
+| Panelist | Typical gap trigger | Focus |
+|----------|-------------------|-------|
+| **SEO/GEO/AEO Specialist** | Discoverability, meta tags, structured data | Search engine optimization, generative engine optimization, AI engine optimization, sitemaps, canonical URLs, Open Graph, schema.org markup |
+| **Analytics/Growth Expert** | Tracking, metrics, user behavior | Event tracking, conversion funnels, A/B testing hooks, user behavior analytics, KPI instrumentation |
+| **Web Performance Expert** | Performance budget, load times | Core Web Vitals, Lighthouse scores, lazy loading, image optimization, caching headers, CDN strategy |
+| **Accessibility Expert** | a11y beyond basic WCAG | Screen reader testing, keyboard navigation, color contrast, ARIA patterns, focus management, reduced motion |
+| **i18n/Localization Expert** | Multi-language, locale handling | String externalization, RTL support, date/number formatting, locale-aware content, translation workflow |
+| **Privacy/Compliance Reviewer** | Data handling, privacy, legal | GDPR, CCPA, cookie consent, data retention, PII handling, terms of service implications |
+| **DevOps/Infrastructure Expert** | Deployment, scaling, monitoring | CI/CD impact, environment variables, feature flags, rollback strategy, monitoring/alerting |
+
+Gap panelists use the same output format as Round 1 (MUST ADDRESS / SHOULD ADDRESS / CONSIDER / APPROVED ASPECTS).
+
+#### After both rounds complete
+
+1. **Synthesize**: Orchestrator consolidates ALL panelist feedback (both rounds) into a single report, grouped by theme (not by panelist) to eliminate duplication
+2. **Prioritize**: Rank all MUST ADDRESS items. If panelists contradict each other, flag the conflict for user decision.
+3. **Revise design**: Address all MUST ADDRESS items and all UNHAPPY PATHS flagged by Stress Test Reviewer. Present SHOULD ADDRESS items to user for decision.
+4. **Optional re-review**: If design changed significantly, re-run affected panelists only (not the full panel)
+
+---
+
+### Part E: User Approval Gate
+
+Present the user with:
+1. Final design document (revised after panel review)
+2. Consolidated panel report (what was found, what was addressed, what was deferred)
+3. Risk assessment (remaining risks after addressing panel feedback)
+
+**User approves → proceed to Part F.**
+**User requests changes → revise and optionally re-run affected panelists.**
+
+**Context checkpoint**: After approval, compress the entire design phase (Parts A-E) into the final approved plan document. Only the plan document carries forward into Step 4 execution — not the raw research, panelist reports, or revision history.
+
+---
+
+### Part F: Implementation Plan
+
+Once design is approved, continue in the same document. Invoke `superpowers:writing-plans`:
+1. Route the requirement using the Agent Routing table (see Step 2)
+2. Decide parallel vs sequential (see Step 3)
+3. **For parallel cross-repo slices**: define a concrete contract artifact — TypeScript interface definition or API shape that both agents must conform to. Include in the plan document.
+4. Break work into committable slices with TDD steps
+5. For each slice: agent, scope, files to touch/not touch, contract reference, localhost test instructions
+6. **Get user approval on the full plan before executing**
+
+---
+
+### Document structure
+
+```markdown
+# [Feature Name]
+
+## Research & Context
+- Current state: [what exists, affected files/services]
+- Industry research: [how others solve this, best practices found]
+- Library docs: [relevant API references]
+
+## Requirements
+- [Clarified requirements]
+- Impact analysis: [files, services, flows affected]
+- Dependencies: [what must exist first]
+- Risks: [what could go wrong]
+
+## Design
+- Goal: [one sentence]
+- Approach: [2-3 sentences]
+- Data flow / API shapes: [as needed]
+- Component structure: [if UI changes]
+- Error states & edge cases: [as needed]
+- Trade-offs: [why this approach over alternatives]
+
+## Panel Review Report
+- Panel composition: [which panelists were selected and why]
+- MUST ADDRESS: [consolidated findings, grouped by theme]
+- SHOULD ADDRESS: [consolidated, with user decisions]
+- Blind spots surfaced: [what the team hadn't considered]
+- Design revisions made: [how the design changed in response]
+
+## Implementation Plan
+- Mode: [parallel / sequential / single agent]
+- Slices:
+  - Slice 1: [description] → Agent: [X] → Test: [Y]
+  - Slice 2: ...
+```
+
+---
+
+## Step 2: Route the Requirement
+
+Use the Agent Routing table in root `CLAUDE.md`:
+
+| Requirement type | Agent |
+|-----------------|-------|
+| UI components, pages, styling, React hooks, frontend state | Frontend Engineer |
+| REST API endpoints, controllers, services, DB access, queues | Backend Engineer |
+| MCP tool definitions, protocol proxying | General Engineer (muggle-ai-mcp) |
+| Electron app, browser automation | General Engineer (muggle-ai-teaching-service) |
+| API contract change (request/response shape) | Both Frontend + Backend |
+| Documentation (muggle-ai-docs, muggle-ai-skills) | Handle directly |
+
+## Step 3: Decide Parallel vs Sequential
+
+Run this checklist. First match wins:
+
+1. Does the change add or remove an endpoint? → **Sequential (backend first)**
+2. Does the response shape require new types? → **Sequential (backend first)**
+3. Are multiple backend services coordinated? → **Sequential (backend first)**
+4. Is the contract already defined or agreed? → **Parallel**
+5. Is it a field add/remove/rename on existing endpoint? → **Parallel**
+6. Is it CRUD on existing model, no shape change? → **Parallel**
+7. Frontend only? → **Frontend Engineer only**
+8. Backend only? → **Backend Engineer only**
+9. None of the above? → **Ask the user**
+
+## Step 4: Execute Per Slice
+
+> **Skills**: `superpowers:executing-plans`, `superpowers:dispatching-parallel-agents`, `superpowers:test-driven-development`
+
+### Dispatch strategy
+
+- **2+ independent slices** (e.g. parallel frontend + backend): Invoke `superpowers:dispatching-parallel-agents` to run them simultaneously
+- **Sequential slices**: Execute one at a time using `superpowers:executing-plans`
+- **Single slice**: Execute directly
+
+### Per slice execution
+
+1. Spawn the engineer agent with:
+   - Slice details + applicable stack rules
+   - **Instruction to follow TDD** (`superpowers:test-driven-development`): write failing test → implement → pass → refactor
+   - Scope (files to touch, files NOT to touch)
+   - Contract (if cross-repo)
+
+2. Review the agent's structured summary
+   - All quality gates must pass (typecheck, lint + secret scanning, test)
+   - **Scope check**: Run `git diff --name-only` and verify all modified files are within the declared scope. If the agent touched files outside scope, flag and revert before proceeding.
+   - **Contract check** (parallel cross-repo slices only): Verify the implementation matches the contract artifact defined in the plan. If mismatched, send back to engineer with the specific discrepancy.
+
+3. Give the user localhost test instructions
+
+4. Wait for user confirmation
+
+5. If confirmed → commit locally (do NOT push to remote yet — push happens after Step 6 review)
+   If issues → enter fix cycle (see below)
+
+6. Next slice
+
+### Fix cycle (when user reports issues)
+
+> **Skill**: `superpowers:systematic-debugging`
+
+1. User describes issue
+2. Invoke `superpowers:systematic-debugging` — structured diagnosis, not guessing:
+   - Reproduce the issue
+   - Form hypothesis
+   - Verify with evidence
+   - Fix root cause, not symptoms
+3. Triage: which agent? Bug, missing feature, or adjustment?
+4. Spawn correct Engineer with fix scope + TDD
+5. Quality gates → user re-tests → commit locally
+6. If same issue persists after 2 fix attempts → escalate to user: (A) accept risk, (B) redesign, (C) different approach
+7. Back to normal flow
+
+## Step 5: Verify Before Completing
+
+> **Skill**: `superpowers:verification-before-completion`
+
+After all slices are committed locally, before spawning the Reviewer:
+1. Invoke `superpowers:verification-before-completion`
+2. Run ALL quality gates across every repo touched (typecheck, lint + secret scanning, test)
+3. Confirm all tests pass with actual output (not assumptions)
+4. Verify no untracked files or uncommitted changes
+5. Verify no sensitive data (API keys, passwords, connection strings) in any committed file
+6. Only proceed to review when verification passes
+
+## Step 6: Review Per PR
+
+> **Skills**: `superpowers:requesting-code-review`, `superpowers:receiving-code-review`
+
+### Request review
+
+Invoke `superpowers:requesting-code-review`:
+1. Spawn the Reviewer agent on the full diff
+   - Pass 1: Code quality (bugs, edge cases, security, performance)
+   - Pass 2: Compliance (CLAUDE.md rules, naming, types, tests)
+   - Pass 3: Contract consistency (cross-repo PRs only)
+2. Reviewer returns MUST FIX / SHOULD FIX / NITPICK
+
+### Receive review
+
+Invoke `superpowers:receiving-code-review` to process findings:
+- **Do NOT blindly implement all suggestions** — verify each finding is technically correct
+- If a finding is wrong, explain why and skip it
+- MUST FIX → engineer fixes with TDD → quality gates → user re-tests → commit locally
+- SHOULD FIX → engineer fixes → quality gates → commit locally
+- If same finding persists after 2 fix attempts → escalate to user
+- NITPICK → fix if trivial, skip if not
+- Re-run Reviewer after fixes if there were MUST FIX items
+
+## Step 7: Push & Finish Branch
+
+> **Skill**: `superpowers:finishing-a-development-branch`
+
+When Reviewer approves:
+1. **Push all commits to remote** (this is the first time code reaches the remote)
+2. **Wait for CI** — poll CI status (`gh run list --branch <branch>`) and wait for all checks to pass. If CI fails, diagnose and fix before proceeding.
+3. Invoke `superpowers:finishing-a-development-branch`
+4. Provide PR title + description (per groundrules naming convention)
+5. User opens PR
+
+## Step 8: Learn & Graduate
+
+> **Skill**: `claude-md-management:revise-claude-md`
+
+After every workflow run (whether successful or abandoned), the orchestrator captures learnings and graduates them into persistent rules.
+
+### 8.1: Capture run log
+
+Append a **Run Log** section to the plan document:
+
+```markdown
+## Run Log
+### Panelist Performance
+| Panelist | Findings | Led to change | Rejected |
+|----------|----------|--------------|----------|
+
+### Agent Performance
+| Agent | Slices | Gate first-pass | Fix cycles |
+|-------|--------|----------------|------------|
+
+### Cost
+- Total tokens / cost for this workflow run (from `/cost`)
+
+### Lessons Learned
+- Design patterns that worked: [what and why]
+- Mistakes caught by panel: [what, who caught it, how to prevent next time]
+- Engineer dispatch improvements: [agent, recurring issue, context to add]
+```
+
+### 8.2: Graduate learnings into persistent rules
+
+Ask: **"Did we learn anything that should apply to ALL future runs?"**
+
+| Learning type | Graduates to |
+|--------------|-------------|
+| Design pattern that always works | Per-repo CLAUDE.md |
+| Recurring engineer mistake | Agent definition (dispatch context) |
+| Panelist finding that applies universally | Per-repo CLAUDE.md |
+| Orchestrator decision pattern | Workflow file or memory |
+| User preference | Memory files |
+
+**Sensitive data check**: Before writing ANY learning to a persistent file, verify it contains NO:
+- API keys, passwords, tokens, or connection strings
+- Internal URLs with credentials
+- Environment variable values
+- PII or customer data
+
+If a learning references sensitive context, abstract it: "Auth endpoint must handle token refresh" NOT "Auth0 tenant xyz.auth0.com token refresh at /oauth/token"
+
+### 8.3: Compress rules when needed
+
+When a CLAUDE.md file accumulates many similar rules:
+1. **Compress**: Merge related specific rules into fewer general rules
+   - Before: 4 rules about auth error handling → After: 1 rule covering all auth error patterns
+2. **Split**: When a CLAUDE.md exceeds ~200 lines, split into domain-specific rule files
+   - `muggle-ai-ui/CLAUDE.md` (core) + `muggle-ai-ui/docs/rules/auth.md`, `forms.md`, etc.
+   - Agent reads core CLAUDE.md (always) + relevant domain rule file (only when working on that domain)
+
+### 8.4: How the system gets smarter over time
+
+The orchestrator reads past learnings (now in CLAUDE.md and agent definitions, not in run logs) at the start of each new `/workflow` run. Over time:
+- Designs anticipate common concerns upfront → panel finds fewer issues → fewer panelists needed
+- Engineer dispatch prompts include known pitfalls → higher first-pass quality → fewer fix cycles
+- The panel shrinks not because panelists are pruned, but because the orchestrator produces better designs that need less scrutiny
+
+---
+
+## Error Recovery
+
+- Quality gates fail repeatedly → escalate to user (likely architectural issue, not a code fix)
+- Same finding persists after 2 fix attempts → escalate to user: (A) accept risk, (B) redesign, (C) different approach
+- User issue unreproducible → ask for screenshots/console errors; invoke `superpowers:systematic-debugging`
+- Parallel file conflict → orchestrator resolves before committing; prevent by declaring file ownership in planning
+- No progress for 10 minutes → checkpoint current state and alert user (stuck agent detection)
+
+## Sync Check
+
+After updating any agent or workflow file, run: `scripts/sync-agents.sh`
+
+---
+
+## Quick Reference: Agents & Skills by Phase
+
+| Phase | Agent / Skill | When |
+|-------|--------------|------|
+| Research | `feature-dev:code-explorer`, `WebSearch`, `Context7`, `EnterPlanMode` | Step 1A: understand current state + landscape |
+| Design | `feature-dev:code-architect`, `frontend-design:frontend-design`, `superpowers:brainstorming` | Step 1C: architecture + visual design + approach exploration |
+| Panel Review | `superpowers:dispatching-parallel-agents` + specialist panelists | Step 1D: multi-expert scrutiny of design |
+| Plan | `superpowers:writing-plans` | Step 1F: implementation slices |
+| Execute | `superpowers:executing-plans` | Running the plan sequentially |
+| Execute | `superpowers:dispatching-parallel-agents` | 2+ independent slices |
+| Execute | `superpowers:test-driven-development` | Every engineer agent slice |
+| Debug | `superpowers:systematic-debugging` | Any bug, test failure, or unexpected behavior |
+| Verify | `superpowers:verification-before-completion` | Before claiming work is done |
+| Review | `superpowers:requesting-code-review` | After all slices committed locally |
+| Review | `superpowers:receiving-code-review` | Processing reviewer findings |
+| Push & Finish | `superpowers:finishing-a-development-branch` | Push to remote + PR after review passes |
+| Learn | `claude-md-management:revise-claude-md` | Graduate learnings into persistent rules |
