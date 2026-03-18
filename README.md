@@ -36,26 +36,25 @@ Works with **Claude Code** and **Cursor** out of the box. Same workflow, same qu
 
 ## Quick Start
 
-### Claude Code
+### One command (from your project directory)
 
 ```bash
-# Copy agent definitions to your project
-cp -r claude-code/agents/ <your-project>/.claude/agents/
-cp -r claude-code/commands/ <your-project>/.claude/commands/
-
-# Start the workflow
-# In Claude Code, type:
-/workflow
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash
 ```
 
-### Cursor
+That's it. Then:
+- **Claude Code**: type `/workflow` to start
+- **Cursor**: reference `@agent-workflow.mdc` in your prompt
+
+### Options
 
 ```bash
-# Copy rule files to your project root
-cp cursor/*.mdc <your-project>/
-```
+# Install only Claude Code files
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash -s -- --claude-only
 
-Then reference `@agent-workflow.mdc` in your Cursor prompt to activate the workflow.
+# Install only Cursor files
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash -s -- --cursor-only
+```
 
 ---
 
@@ -188,41 +187,37 @@ All agents return structured summaries. Engineers run quality gates before retur
 
 ## Installation
 
-### Claude Code
+### Recommended: one-line install
 
-1. Copy the agent definitions into your project:
+From your project directory:
+
 ```bash
-cp -r claude-code/agents/ <your-project>/.claude/agents/
-cp -r claude-code/commands/ <your-project>/.claude/commands/
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash
 ```
 
-2. (Optional) Copy the sync script:
+This installs both Claude Code and Cursor files + the sync script.
+
+### Manual install
+
+If you prefer to clone and copy manually:
+
 ```bash
-cp -r scripts/ <your-project>/scripts/
+git clone https://github.com/bendtyo/muggle-workflows.git /tmp/muggle-workflows
+cd <your-project>
+/tmp/muggle-workflows/install.sh
 ```
 
-3. Start a Claude Code session in your project and type `/workflow`.
+### Claude Code only
 
-### Cursor
-
-1. Copy the rule files into your project root:
 ```bash
-cp cursor/*.mdc <your-project>/
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash -s -- --claude-only
 ```
 
-2. Reference `@agent-workflow.mdc` in your prompt to activate the workflow.
+### Cursor only
 
-### Both (recommended)
-
-If you use both Claude Code and Cursor:
 ```bash
-cp -r claude-code/agents/ <your-project>/.claude/agents/
-cp -r claude-code/commands/ <your-project>/.claude/commands/
-cp cursor/*.mdc <your-project>/
-cp -r scripts/ <your-project>/scripts/
+curl -fsSL https://raw.githubusercontent.com/bendtyo/muggle-workflows/main/install.sh | bash -s -- --cursor-only
 ```
-
-Run `./scripts/sync-agents.sh` to verify both sets stay in sync.
 
 ---
 
@@ -283,6 +278,7 @@ muggle-workflows/
     agent-workflow.mdc        # Cursor equivalent
   scripts/
     sync-agents.sh            # Verify Claude Code + Cursor files stay in sync
+  install.sh                  # One-command installer
   README.md
 ```
 
